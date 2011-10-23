@@ -6,9 +6,10 @@ import re
 # The docs file contains a doc description per line, "<Doc #> <doc tokens separated by spaces>"
 class WordOverlap(object):
   def __init__(self):
-    self._overlapCount = 0
     self._queries      = []
     self._documents	   = []
+    self._performWrite = False
+    self.freqs         = []
     
   def _getQueries(self):
     text = open('a2.qrys', 'r')
@@ -67,21 +68,29 @@ class WordOverlap(object):
         print query_count[0] + " 0 " + query_count[1] + " 0 " + query_count[2] + " 0 "
     """
     
-    # Write the results to file
-    self._writeOut(query_freq)
+    if (self._performWrite):
+      # Write the results to file
+      self._writeOut(query_freq)
+      print ">>> Writing word overlaps to overlap.top."
+    self.freqs = query_freq
        
   
-  def count(self):
+  def count(self, write):
+    self._performWrite = write
     self._getQueries()
     self._getDocuments()
     self._overlap() 
 
 def main():
   
+  # 'write' determines whether we write to file or not.
   overlap = WordOverlap()
-  overlap.count()
+  overlap.count(write=True)
   
-  print "Goodbye."
+  #tf = Tfidf(overlap.freqs)
+  #tf.retrieve(write=False)
+  
+  print "Done! Goodbye."
 
 if __name__=="__main__":
   main()
