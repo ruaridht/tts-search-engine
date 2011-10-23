@@ -105,10 +105,13 @@ class Tfidf(object):
   
   def _numDocsContain(self, w):
     num = 0
-    for doc in self._dWords:
+    for doc in self._documents:
       if w in doc:
         num += 1
     return num
+    
+  def _numNum(self,w):
+    return [1 for doc in self._documents if w in doc].count(1)
   
   def _sum(self):
     k            = 2.0
@@ -130,22 +133,28 @@ class Tfidf(object):
         doc_len = len(doc)-1.0
         weighted_sum = 0.0
         for word in query[1:]:
+          
           tf_wq = query.count(word) # number of times the word occurs in the query
           tf_wd = doc.count(word) # number of times the word occurs in the document
-          df_w  = self._numDocsContain(word)
+          df_w  = self._numDocsContain(word) # This takes ages :(
           tf_idf = 0
           # No point calculating the tf.idf if we know it's going to be zero
           if (tf_wd != 0):
             tf_idf = (tf_wq*(tf_wd / (tf_wd + ((k*doc_len)/doc_len_avg) ))*(math.log(num_docs/df_w)))
           weighted_sum += tf_idf
+          
+        # Only care about things with a weight above 0
         if (weighted_sum != 0):
           query_weights.append((query[0], doc[0], str(weighted_sum)))
+        
       self._weighted_sums.append(query_weights)
+      break
       
+    """
     for query in self._weighted_sums:
       for weight in query:
         print weight[0] + " 0 " + weight[1] + " 0 " + weight[2] + " 0 "
-    
+    """
     if (self._performWrite):
       self._writeOut()
     
