@@ -86,6 +86,8 @@ class Tfidf(object):
     self._performWrite  = False
     self._documents     = o_docs
     self._queries       = o_queries
+    self._rel_docs      = []
+    self._rel_nums      = []
     self._dWords        = []
     self._qWords        = []
     self._weighted_sums = []
@@ -103,6 +105,13 @@ class Tfidf(object):
     for qry in self._queries:
       self._qWords.append(qry.split())
   
+  def _parseRelevant(self):
+    f = open('a2.qrel','r')
+    self._rel_docs = f.readlines()
+    f.close()
+    self._rel_docs = [doc.split() for doc in self._rel_docs]
+    print self._rel_docs
+    
   def _numDocsContain(self, w):
     num = 0
     for doc in self._documents:
@@ -129,6 +138,8 @@ class Tfidf(object):
     # and the overall size will be len(queries)*len(documents) ?
     for query in self._qWords:
       query_weights = []
+      query_found   = []
+      average_precision = 0.0
       for doc in self._dWords:
         doc_len = len(doc)-1.0
         weighted_sum = 0.0
@@ -146,7 +157,8 @@ class Tfidf(object):
         # Only care about things with a weight above 0
         if (weighted_sum != 0):
           query_weights.append((query[0], doc[0], str(weighted_sum)))
-        
+        break
+      
       self._weighted_sums.append(query_weights)
       break
       
@@ -161,6 +173,7 @@ class Tfidf(object):
   def retrieve(self, write):
     self._performWrite = write
     self._parseWords()
+    self._parseRelevant()
     self._sum()
     
 
