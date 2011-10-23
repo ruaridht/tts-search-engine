@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 import re
+import math
 
-# The query file contains a query per line, "<Query #> <query tokens separated by spaces>"
-# The docs file contains a doc description per line, "<Doc #> <doc tokens separated by spaces>"
 class WordOverlap(object):
   def __init__(self):
     self._queries      = []
@@ -79,16 +78,99 @@ class WordOverlap(object):
     self._performWrite = write
     self._getQueries()
     self._getDocuments()
-    self._overlap() 
+    self._overlap()
+    
+# tf.idf class
+class Tfidf(object):
+  def __init__(self, o_docs, o_queries):
+    self._performWrite  = False
+    self._documents     = o_docs
+    self._queries       = o_queries
+    self._dWords        = []
+    self._qWords        = []
+    self._weighted_sums = []
+    
+  def _writeOut(self):
+    f = open('tfidf.top','w')
+    for query in self._weighted_sums:
+      for weight in query:
+        f.write(weight[0] + " 0 " + weight[1] + " 0 " + weight[2] + " 0 \n")
+    f.close()
+    
+  def _parseWords(self):
+    for doc in self._documents:
+      self._dWords.append(doc.split())
+    for qry in self._queries:
+      self._qWords.append(qry.split())
+  
+  def _numDocsContain(self, w):
+    num = 0
+    for doc in self._dWords:
+      if w in doc:
+        num += 1
+    return num
+  
+  def _sum(self):
+    k            = 2.0
+    weighted_sum = 0.0
+    num_docs     = len(self._dWords)
+    doc_len_avg  = 0.0
+    
+    for doc in self._dWords:
+      doc_len_avg += len(doc)-1.0 # Subtract 1 to 
+    doc_len_avg = doc_len_avg / len(self._dWords) # The averaging step
+    
+    # The main tf.idf loop
+    # For each query we calculate the tf.idf for each document and add this to the list.
+    # This means query_weights will be len(documents) and weighted sums will be len(queries)
+    # and the overall size will be len(queries)*len(documents) ?
+    for query in self._qWords:
+      query_weights = []
+      for doc in self._dWords:
+        doc_len = len(doc)-1.0
+        weighted_sum = 0.0
+        for word in query[1:]:
+          tf_wq = query.count(word) # number of times the word occurs in the query
+          tf_wd = doc.count(word) # number of times the word occurs in the document
+          df_w  = self._numDocsContain(word)
+          tf_idf = 0
+          # No point calculating the tf.idf if we know it's going to be zero
+          if (tf_wd != 0):
+            tf_idf = (tf_wq*(tf_wd / (tf_wd + ((k*doc_len)/doc_len_avg) ))*(math.log(num_docs/df_w)))
+          weighted_sum += tf_idf
+        if (weighted_sum != 0):
+          query_weights.append((query[0], doc[0], str(weighted_sum)))
+      self._weighted_sums.append(query_weights)
+      
+    for query in self._weighted_sums:
+      for weight in query:
+        print weight[0] + " 0 " + weight[1] + " 0 " + weight[2] + " 0 "
+    
+    if (self._performWrite):
+      self._writeOut()
+    
+  def retrieve(self, write):
+    self._performWrite = write
+    self._parseWords()
+    self._sum()
+    
 
 def main():
+  # The query file contains a query per line, "<Query #> <query tokens separated by spaces>"
+  # The docs file contains a doc description per line, "<Doc #> <doc tokens separated by spaces>"
   
   # 'write' determines whether we write to file or not.
-  overlap = WordOverlap()
-  overlap.count(write=True)
   
-  #tf = Tfidf(overlap.freqs)
-  #tf.retrieve(write=False)
+  # Get the word overlap count.  Here we are counting how many of the query words appear in
+  # the document, rather than how many times the query words appear (equation description delcares
+  # binary weighting)
+  overlap = WordOverlap()
+  overlap.count(write=False)
+  
+  # Compute the tf.idf weighted sum
+  tf = Tfidf(overlap._documents,overlap._queries)
+  tf.retrieve(write=True)
+  
   
   print "Done! Goodbye."
 
