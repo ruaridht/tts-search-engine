@@ -112,7 +112,8 @@ class Tfidf(object):
     return num
     
   def _stemStopwordDocs(self):
-    
+    for doc in self._documents:
+      print "lol"
   
   def _sum(self):
     k            = 2.0
