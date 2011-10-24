@@ -2,6 +2,7 @@
 
 import re
 import math
+import porter2
 
 class WordOverlap(object):
   def __init__(self):
@@ -109,6 +110,9 @@ class Tfidf(object):
       if w in doc:
         num += 1
     return num
+    
+  def _stemStopwordDocs(self):
+    
   
   def _sum(self):
     k            = 2.0
@@ -133,6 +137,7 @@ class Tfidf(object):
         weighted_sum = 0.0
         
         for word in query[1:]:
+          word = porter2.stem(word)
           tf_wq = query.count(word)
           tf_wd = doc.count(word)
           df_w  = 0.0
@@ -140,7 +145,7 @@ class Tfidf(object):
           # No point calculating the tf.idf if we know it's going to be zero
           if (tf_wd != 0):
             df_w = self._numDocsContain(word) # This step takes ages. :(
-            tf_idf = (tf_wq*(tf_wd / (tf_wd + ((k*doc_len)/doc_len_avg) ))*(math.log(num_docs/df_w)))
+            tf_idf = (tf_wq*(tf_wd / (tf_wd + ((k*doc_len)/doc_len_avg) ))*(math.log(num_docs/df_w, math.e)))
           weighted_sum += tf_idf
           
         # Only care about things with a weight above 0
@@ -148,15 +153,21 @@ class Tfidf(object):
           query_weights.append((query[0], doc[0], str(weighted_sum)))
       
       self._weighted_sums.append(query_weights)
-    
+      
     if (self._performWrite):
       self._writeOut()
+    
+  def _stem(self):
+    for query in self._qWords:
+      for word in query:
+        print word, porter2.stem(word)
+      break
     
   def retrieve(self, write):
     self._performWrite = write
     self._parseWords()
     self._sum()
-    
+    #self._stem()
 
 def main():
   # The query file contains a query per line, "<Query #> <query tokens separated by spaces>"
