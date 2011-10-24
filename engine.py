@@ -90,6 +90,8 @@ class Tfidf(object):
     self._dWords        = []
     self._qWords        = []
     self._weighted_sums = []
+    self._doc_stem      = []
+    self._doc_stem_words = []
     
   def _writeOut(self):
     f = open('tfidf.top','w')
@@ -106,14 +108,19 @@ class Tfidf(object):
   
   def _numDocsContain(self, w):
     num = 0
-    for doc in self._documents:
+    for doc in self._doc_stem: #self._documents:
       if w in doc:
         num += 1
     return num
     
-  def _stemStopwordDocs(self):
-    for doc in self._documents:
-      print "lol"
+  def _stemDocs(self):
+    for doc in self._dWords:
+      new_doc = ''
+      for word in doc:
+        new_doc += porter2.stem(word) + ' '
+      self._doc_stem.append(new_doc)
+      self._doc_stem_words.append(new_doc.split())
+    print ">>> Docs stemmed"
   
   def _sum(self):
     k            = 2.0
@@ -131,14 +138,14 @@ class Tfidf(object):
     # and the overall size will be len(queries)*len(documents) ?
     for query in self._qWords:
       query_weights = []
-      print "Query " + query[0]
+      print ">>> Processing query " + query[0]
       
-      for doc in self._dWords:
+      for doc in self._doc_stem_words: #self._dWords:
         doc_len = len(doc)-1.0
         weighted_sum = 0.0
         
         for word in query[1:]:
-          word = porter2.stem(word)
+          word = porter2.stem(word) # Inline stemming of query words
           tf_wq = query.count(word)
           tf_wd = doc.count(word)
           df_w  = 0.0
@@ -158,17 +165,11 @@ class Tfidf(object):
     if (self._performWrite):
       self._writeOut()
     
-  def _stem(self):
-    for query in self._qWords:
-      for word in query:
-        print word, porter2.stem(word)
-      break
-    
   def retrieve(self, write):
     self._performWrite = write
     self._parseWords()
+    self._stemDocs()
     self._sum()
-    #self._stem()
 
 def main():
   # The query file contains a query per line, "<Query #> <query tokens separated by spaces>"
