@@ -153,7 +153,7 @@ class Tfidf(object):
           # No point calculating the tf.idf if we know it's going to be zero
           if (tf_wd != 0):
             df_w = self._numDocsContain(word) # This step takes ages. :(
-            tf_idf = (tf_wq*(tf_wd / (tf_wd + ((k*doc_len)/doc_len_avg) ))*( math.log10(num_docs/df_w, math.e) ))
+            tf_idf = (tf_wq*(tf_wd / (tf_wd + ((k*doc_len)/doc_len_avg) ))*( math.log10(num_docs/df_w) ))
           weighted_sum += tf_idf
           
         # Only care about things with a weight above 0
