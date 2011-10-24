@@ -108,7 +108,7 @@ class Tfidf(object):
   
   def _numDocsContain(self, w):
     num = 0
-    for doc in self._doc_stem: #self._documents:
+    for doc in self._documents: #self._doc_stem:
       if w in doc:
         num += 1
     return num
@@ -140,12 +140,12 @@ class Tfidf(object):
       query_weights = []
       print ">>> Processing query " + query[0]
       
-      for doc in self._doc_stem_words: #self._dWords:
+      for doc in self._dWords: #self._doc_stem_words
         doc_len = len(doc)-1.0
         weighted_sum = 0.0
         
         for word in query[1:]:
-          word = porter2.stem(word) # Inline stemming of query words
+          #word = porter2.stem(word) # Inline stemming of query words
           tf_wq = query.count(word)
           tf_wd = doc.count(word)
           df_w  = 0.0
@@ -168,7 +168,7 @@ class Tfidf(object):
   def retrieve(self, write):
     self._performWrite = write
     self._parseWords()
-    self._stemDocs()
+    #self._stemDocs()
     self._sum()
 
 def main():
