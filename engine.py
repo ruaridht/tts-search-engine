@@ -123,7 +123,7 @@ class Tfidf(object):
     print ">>> Docs stemmed"
   
   def _sum(self):
-    k            = 2.0
+    k            = 4.0
     weighted_sum = 0.0
     num_docs     = len(self._dWords)
     doc_len_avg  = 0.0
