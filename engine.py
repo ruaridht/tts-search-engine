@@ -110,7 +110,6 @@ class Tfidf(object):
     self._rel_docs = f.readlines()
     f.close()
     self._rel_docs = [doc.split() for doc in self._rel_docs]
-    print self._rel_docs
     
   def _numDocsContain(self, w):
     num = 0
@@ -118,15 +117,14 @@ class Tfidf(object):
       if w in doc:
         num += 1
     return num
-    
-  def _numNum(self,w):
-    return [1 for doc in self._documents if w in doc].count(1)
   
   def _sum(self):
     k            = 2.0
     weighted_sum = 0.0
     num_docs     = len(self._dWords)
     doc_len_avg  = 0.0
+    avg_precisions = []
+    mean_avg_prec  = 0.0
     
     for doc in self._dWords:
       doc_len_avg += len(doc)-1.0 # Subtract 1 to 
@@ -139,34 +137,42 @@ class Tfidf(object):
     for query in self._qWords:
       query_weights = []
       query_found   = []
+      num_found     = 0.0
+      num_relevant  = 0.0
       average_precision = 0.0
+      print "Query " + query[0]
+      
       for doc in self._dWords:
         doc_len = len(doc)-1.0
         weighted_sum = 0.0
+        
         for word in query[1:]:
-          
           tf_wq = query.count(word) # number of times the word occurs in the query
           tf_wd = doc.count(word) # number of times the word occurs in the document
-          df_w  = self._numDocsContain(word) # This takes ages :(
-          tf_idf = 0
+          df_w  = 0.0 #self._numDocsContain(word) # This takes ages :(
+          tf_idf = 0.0
           # No point calculating the tf.idf if we know it's going to be zero
           if (tf_wd != 0):
+            df_w = self._numDocsContain(word) # This is a slow step, hence it is in here.
             tf_idf = (tf_wq*(tf_wd / (tf_wd + ((k*doc_len)/doc_len_avg) ))*(math.log(num_docs/df_w)))
           weighted_sum += tf_idf
           
         # Only care about things with a weight above 0
         if (weighted_sum != 0):
           query_weights.append((query[0], doc[0], str(weighted_sum)))
-        break
+        found = [query[0],'0',doc[0],'1']
+        num_found += 1.0
+        if (found in self._rel_docs):
+          num_relevant += 1.0
+          average_precision += (num_relevant/num_found)
+      average_precision = average_precision / num_found
+      avg_precisions.append(average_precision)
       
       self._weighted_sums.append(query_weights)
-      break
-      
-    """
-    for query in self._weighted_sums:
-      for weight in query:
-        print weight[0] + " 0 " + weight[1] + " 0 " + weight[2] + " 0 "
-    """
+    
+    mean_avg_prec = sum(avg_precisions) / len(self._qWords)
+    print mean_avg_prec, sum(avg_precisions)
+    
     if (self._performWrite):
       self._writeOut()
     
