@@ -62,12 +62,6 @@ class WordOverlap(object):
           word_freq_for_query.append((query[0],doc[0],str(word_count)))
       query_freq.append(word_freq_for_query)
     
-    """
-    for query in query_freq:
-      for query_count in query:
-        print query_count[0] + " 0 " + query_count[1] + " 0 " + query_count[2] + " 0 "
-    """
-    
     if (self._performWrite):
       # Write the results to file
       self._writeOut(query_freq)
@@ -80,6 +74,7 @@ class WordOverlap(object):
     self._getQueries()
     self._getDocuments()
     self._overlap()
+    print ">>> Word overlap done!"
     
 # tf.idf class
 class Tfidf(object):
@@ -113,6 +108,13 @@ class Tfidf(object):
         num += 1
     return num
     
+  def _numStemDocsContain(self, w):
+    num = 0
+    for doc in self._doc_stem:
+      if w in doc:
+        num += 1
+    return num
+    
   def _stemDocs(self):
     for doc in self._dWords:
       new_doc = ''
@@ -123,7 +125,7 @@ class Tfidf(object):
     print ">>> Docs stemmed"
   
   def _sum(self):
-    k            = 0.8
+    k            = 1.0
     weighted_sum = 0.0
     num_docs     = len(self._dWords)
     doc_len_avg  = 0.0
@@ -164,12 +166,69 @@ class Tfidf(object):
       
     if (self._performWrite):
       self._writeOut()
+      print ">>> Writing tf.idf results to tfidf.top"
+      
+  def _sumStem(self):
+    k            = 1.0
+    weighted_sum = 0.0
+    num_docs     = len(self._dWords)
+    doc_len_avg  = 0.0
+    
+    for doc in self._doc_stem_words:
+      doc_len_avg += len(doc)-1.0 # Subtract 1 to 
+    doc_len_avg = doc_len_avg / len(self._dWords) # The averaging step
+    
+    # The main tf.idf loop
+    # For each query we calculate the tf.idf for each document and add this to the list.
+    # This means query_weights will be len(documents) and weighted sums will be len(queries)
+    # and the overall size will be len(queries)*len(documents) ?
+    for query in self._qWords:
+      query_weights = []
+      print ">>> Processing query " + query[0]
+      
+      for doc in self._doc_stem_words:
+        doc_len = len(doc)-1.0
+        weighted_sum = 0.0
+        
+        for word in query[1:]:
+          word = porter2.stem(word) # Inline stemming of query words
+          tf_wq = query.count(word)
+          tf_wd = doc.count(word)
+          df_w  = 0.0
+          tf_idf = 0.0
+          # No point calculating the tf.idf if we know it's going to be zero
+          if (tf_wd != 0):
+            df_w = self._numStemDocsContain(word) # This step takes ages. :(
+            tf_idf = (tf_wq*(tf_wd / (tf_wd + ((k*doc_len)/doc_len_avg) ))*( math.log(num_docs/df_w) ))
+          weighted_sum += tf_idf
+          
+        # Only care about things with a weight above 0
+        if (weighted_sum != 0):
+          query_weights.append((query[0], doc[0], str(weighted_sum)))
+      
+      self._weighted_sums.append(query_weights)
+      
+    if (self._performWrite):
+      self._writeOut()
+      print ">>> Writings tf.idf results to tfidf.top"
     
   def retrieve(self, write):
     self._performWrite = write
     self._parseWords()
-    #self._stemDocs()
     self._sum()
+    
+    # For stemming
+    #self._stemDocs()
+    #self._sumStem()
+    print ">>> tf.idf done!"
+    
+def RstDecRank():
+  overlap = WordOverlap()
+  overlap.count(write=True)
+  
+  # Compute the tf.idf weighted sum
+  tf = Tfidf(overlap._documents,overlap._queries)
+  tf.retrieve(write=True)
 
 def main():
   # The query file contains a query per line, "<Query #> <query tokens separated by spaces>"
@@ -181,12 +240,13 @@ def main():
   # the document, rather than how many times the query words appear (equation description delcares
   # binary weighting)
   overlap = WordOverlap()
-  overlap.count(write=False)
+  overlap.count(write=True)
   
   # Compute the tf.idf weighted sum
   tf = Tfidf(overlap._documents,overlap._queries)
   tf.retrieve(write=True)
   
+  #RstDecRank() # Not sure if this is needed or not
   
   print "Done! Goodbye."
 
